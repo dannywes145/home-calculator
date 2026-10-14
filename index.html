@@ -1,0 +1,136 @@
+<!DOCTYPE html>
+<html lang="en-ZA">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>What will you walk away with? | Home sale calculator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;600;800&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#F5F6F8;--card:#fff;--ink:#14213D;--mute:#5B667A;--line:#DDE1E8;--accent:#0B6E4F;--wa:#14803F;--bad:#B3261E;
+box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}
+html{scroll-padding-top:env(safe-area-inset-top,0px)}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#0E1626;--card:#16213A;--ink:#EDF1F7;--mute:#9AA6BC;--line:#2A3857;--accent:#3FBF8A;--wa:#2DBE6C;--bad:#FF8A80}}
+:root[data-theme="dark"]{--bg:#0E1626;--card:#16213A;--ink:#EDF1F7;--mute:#9AA6BC;--line:#2A3857;--accent:#3FBF8A;--wa:#2DBE6C;--bad:#FF8A80}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:400 16px/1.5 Figtree,system-ui,-apple-system,"Segoe UI",Roboto,sans-serif}
+main{max-width:480px;margin:0 auto;padding:20px 16px 40px}
+h1{font-size:26px;line-height:1.15;font-weight:800;margin:8px 0 6px}
+h2{font-size:18px;margin:0 0 4px;font-weight:800}
+p{margin:0 0 12px}.mute{color:var(--mute);font-size:14px}
+.card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin:16px 0}
+.result{text-align:left}
+.big{font-size:44px;font-weight:800;color:var(--accent);line-height:1.1;margin:2px 0 10px;word-break:break-word}
+.big.neg{color:var(--bad)}
+dl{margin:0}.row{display:flex;justify-content:space-between;gap:12px;padding:7px 0;border-top:1px solid var(--line);font-size:15px}
+.row dd{margin:0;font-weight:600;white-space:nowrap}
+label{display:block;font-weight:600;font-size:14px;margin:14px 0 4px}
+input{width:100%;font:inherit;font-size:17px;padding:12px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink)}
+input:focus-visible,button:focus-visible,a:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+.grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.btn{display:block;width:100%;text-align:center;text-decoration:none;font:inherit;font-weight:800;font-size:17px;padding:14px;border:0;border-radius:12px;background:var(--wa);color:#fff;cursor:pointer;margin-top:14px}
+.btn.alt{background:var(--ink);color:var(--bg)}
+.hide{display:none}
+.warn{color:var(--bad);font-weight:600;font-size:14px}
+small{color:var(--mute);display:block;margin-top:14px;font-size:12.5px;line-height:1.45}
+</style>
+</head>
+<body>
+<main>
+<p class="mute" id="by"></p>
+<h1>What will you walk away with?</h1>
+<p class="mute">Estimate your cash after commission, your bond payout and selling costs.</p>
+
+<section class="card result" aria-live="polite">
+<div class="mute">Estimated cash in your pocket</div>
+<div class="big" id="net">R0</div>
+<dl id="rows"></dl>
+<a class="btn hide" id="wa" href="#" target="_blank" rel="noopener">Chat on WhatsApp</a>
+<p class="mute hide" id="wanote" style="margin:10px 0 0">Not sure what your home will really sell for? Ask for a free valuation.</p>
+</section>
+
+<section class="card">
+<h2>Your numbers</h2>
+<label for="price">Expected selling price (R)</label>
+<input id="price" inputmode="numeric" value="1 500 000">
+<label for="bond">Outstanding bond balance (R)</label>
+<input id="bond" inputmode="numeric" value="800 000">
+<div class="grid">
+<div><label for="pct">Commission (%)</label><input id="pct" inputmode="decimal" value="6"></div>
+<div><label for="cancel">Bond cancellation (R)</label><input id="cancel" inputmode="numeric" value="7 500"></div>
+<div><label for="comp">Compliance certificates (R)</label><input id="comp" inputmode="numeric" value="5 000"></div>
+<div><label for="other">Other costs (R)</label><input id="other" inputmode="numeric" value="0"></div>
+</div>
+<p class="mute" style="margin-top:12px">Cancellation and certificate amounts are rough estimates. Replace them with your quotes. Commission includes 15% VAT.</p>
+</section>
+
+<section class="card" id="agentbox">
+<h2>Are you an agent?</h2>
+<p class="mute">Create your own link. Sellers who use it can message you on WhatsApp with their numbers.</p>
+<label for="an">Your name</label><input id="an" placeholder="Sarah Naidoo" autocomplete="name">
+<label for="ac">Agency (optional)</label><input id="ac" placeholder="Your agency">
+<label for="ap">Your WhatsApp number</label><input id="ap" inputmode="tel" placeholder="082 123 4567" autocomplete="tel">
+<button class="btn alt" id="mk" type="button">Create my link</button>
+<p class="warn hide" id="err"></p>
+<div class="hide" id="out"><label for="lk">Your link</label><input id="lk" readonly><button class="btn" id="cp" type="button">Copy link</button></div>
+</section>
+
+<small>This is an estimate only, not financial or legal advice. Actual costs depend on your attorney, agency mandate and municipality. Transfer duty is paid by the buyer, so it is not included.</small>
+</main>
+<script>
+const $=id=>document.getElementById(id);
+const fmt=n=>(n<0?'-':'')+'R'+Math.abs(Math.round(n)).toLocaleString('en-ZA');
+const num=id=>parseInt(String($(id).value).replace(/\D/g,''),10)||0;
+const q=new URLSearchParams(location.search);
+const agent=(q.get('a')||'').replace(/\D/g,'');
+const aname=(q.get('n')||'').trim().slice(0,40);
+const aco=(q.get('c')||'').trim().slice(0,40);
+let last={};
+function calc(){
+  const price=num('price'),bond=num('bond'),cancel=num('cancel'),comp=num('comp'),other=num('other');
+  const pct=parseFloat(String($('pct').value).replace(',','.'))||0;
+  const comm=price*pct/100,vat=comm*0.15;
+  const net=price-bond-comm-vat-cancel-comp-other;
+  last={price,bond,net};
+  const el=$('net');el.textContent=fmt(net);el.classList.toggle('neg',net<0);
+  const r=[['Selling price',price],['Bond payout',-bond],['Commission',-comm],['VAT on commission',-vat],['Bond cancellation',-cancel],['Compliance certificates',-comp]];
+  if(other)r.push(['Other costs',-other]);
+  $('rows').innerHTML=r.map(x=>'<div class="row"><dt>'+x[0]+'</dt><dd>'+fmt(x[1])+'</dd></div>').join('');
+  if(agent){
+    const who=aname||'there';
+    const msg='Hi '+who+', I used your home sale calculator. Selling price: '+fmt(price)+', bond balance: '+fmt(bond)+', estimated cash in hand: '+fmt(net)+'. Can you tell me what my home is worth?';
+    $('wa').href='https://wa.me/'+agent+'?text='+encodeURIComponent(msg);
+  }
+}
+if(agent){
+  $('wa').classList.remove('hide');$('wanote').classList.remove('hide');
+  $('wa').textContent='Chat to '+(aname||'your agent')+' on WhatsApp';
+  $('by').textContent=aco?(aname?aname+' · ':'')+aco:aname;
+  $('agentbox').querySelector('h2').textContent='Are you an agent? Get your own link';
+}
+['price','bond','cancel','comp','other'].forEach(id=>{
+  $(id).addEventListener('input',calc);
+  $(id).addEventListener('blur',()=>{$(id).value=num(id).toLocaleString('en-ZA')});
+});
+$('pct').addEventListener('input',calc);
+$('mk').onclick=()=>{
+  const n=$('an').value.trim(),c=$('ac').value.trim();
+  let p=$('ap').value.replace(/\D/g,'');
+  if(p.startsWith('0'))p='27'+p.slice(1);
+  const err=$('err');
+  if(!n||!/^27\d{9}$/.test(p)){err.textContent='Enter your name and a valid SA cell number, like 082 123 4567.';err.classList.remove('hide');return}
+  err.classList.add('hide');
+  const u=new URL(location.href.split('?')[0].split('#')[0]);
+  u.searchParams.set('a',p);u.searchParams.set('n',n);if(c)u.searchParams.set('c',c);
+  $('lk').value=u.toString();$('out').classList.remove('hide');
+};
+$('cp').onclick=async()=>{
+  const v=$('lk').value;
+  try{await navigator.clipboard.writeText(v);$('cp').textContent='Copied'}
+  catch(e){$('lk').select();$('cp').textContent='Select and copy the link'}
+  setTimeout(()=>$('cp').textContent='Copy link',2000);
+};
+calc();
+</script>
+</body>
+</html>
